@@ -8,7 +8,7 @@
     </div>
     <div style="margin-left: 1200px;margin-top: 20px;">
       <button>返回</button>
-      <div style="background: #44d5a9;width: 200px;height: 200px;"></div>
+      <div style="background: #44d5a9;width: 200px;height: 200px;">AI</div>
     </div>
   </div>
 </template>
