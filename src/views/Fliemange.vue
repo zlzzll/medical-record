@@ -32,7 +32,7 @@ export default defineComponent({
         });
 
         const totalPages = ref(100)
-        
+
 
 
         const filters = ref({
@@ -55,7 +55,7 @@ export default defineComponent({
                     pageSize: pageSize
                 })
                 //正则表达式格式数据，便于展示
-                
+
                 console.log(res.data.data.data)
 
                 filteredFiles.value = res.data.data.data
@@ -71,7 +71,7 @@ export default defineComponent({
             if (queryName) filters.value.templateName = queryName;
         });
 
-        
+
 
         //日期处理函数，将时间戳转化为具体对应的年月日以及精确的AM和PM
         function customParse(dateStr: string) {
@@ -104,6 +104,7 @@ export default defineComponent({
                 modifyDate: '',
             };
             currentPage.value = 1;
+            updatePage(currentPage.value, pageSize)
         };
 
         // 切换操作菜单的显示状态
@@ -122,32 +123,37 @@ export default defineComponent({
 
 
         // 查看文件详情（GET）
-        const viewFileDetails = async (id: number,name: string) => {
+        const viewFileDetails = async (caseId: any) => {
             try {
-                const response = await axiosService.get(`/api/record/download/${id}`);
-                console.log('文件详情:', response.data);
+                const fileMappings = JSON.parse(localStorage.getItem('fileMappings') || '{}');
+                const fileData = fileMappings[caseId];
 
-                // 实际开发中这里可以跳转到详情页
-                if (response.data.code === 200) {
-                    console.log('文件详情:', response.data);
-                    const fileUrl = response.data.data;
-                    console.log('文件URL:', fileUrl);
-                    const encodedFileUrl = encodeURIComponent(fileUrl);
-                    // 跳转到 /Editor+URL
-                    window.location.href = `/FileEditor?id=${id}&name=${name}&fileUrl=${encodedFileUrl}`;
-
-                    // 显示成功提示
-                    ElMessage.success('文件详情获取成功');
-                } else {
-                    ElMessage.error(response.data.msg);
+                if (!fileData) {
+                    ElMessage.error('未找到文件信息');
+                    return;
                 }
+
+                const encodedFileUrl = encodeURIComponent(fileData.fileUrl);
+                const encodedFileName = encodeURIComponent(fileData.fileName);
+
+                // **进入 FileEditor 之前，先存入缓存**
+                localStorage.setItem("fileEditorData", JSON.stringify({
+                    templateId: fileData.templateId,
+                    caseId,
+                    fileName: fileData.fileName,
+                    fileUrl: fileData.fileUrl
+                }));
+
+                // 跳转到文件编辑页面
+                window.location.href = `/FileEditor?caseId=${caseId}&fileName=${encodedFileName}&fileUrl=${encodedFileUrl}`;
+                ElMessage.success('文件详情获取成功');
             } catch (error) {
                 ElMessage.error('获取文件详情失败');
                 console.error('Error fetching file details:', error);
             }
-
-            showActionMenu.value = null;
         };
+
+
 
         // 删除文件（DELETE）
         const deleteFile = async (id: number) => {
@@ -198,7 +204,7 @@ export default defineComponent({
                     ElMessage.error(data.msg || '获取下载链接失败');
                     return;
                 }
-                
+
                 // 第二步：直接使用下载链接
                 const link = document.createElement('a');
                 link.href = data.data;  // 直接使用后端返回的下载地址
@@ -235,7 +241,7 @@ export default defineComponent({
                 );
                 const regex = /\.[^.]*$/;
                 const match = filename.match(regex);
-                const typename =  match ? match[0] : null;
+                const typename = match ? match[0] : null;
 
                 const response = await axiosService.post(`/api/record/rename`, {
                     id: id,
@@ -360,7 +366,7 @@ export default defineComponent({
             },
             { immediate: true } // 立即执行一次，确保初始值也被处理
         );
-       
+
 
 
 
@@ -386,6 +392,7 @@ export default defineComponent({
             changePage,
             prevPage,
             nextPage,
+            userId,
         };
     },
 });
@@ -394,7 +401,7 @@ export default defineComponent({
 <template>
     <div class="file-management">
         <header class="header">
-            <h2 >文件管理</h2>
+            <h2>文件管理</h2>
             <p>我的文件列表</p>
 
             <button class="create-file-btn" @click="gotoFileCreate">创建文件</button>
@@ -476,27 +483,27 @@ export default defineComponent({
                                 </button>
                                 <!-- 添加show类的绑定不然没法正常显示 -->
                                 <div class="action-menu" :class="{ show: showActionMenu === template.id }">
-                                    <div class="action-item" style="background-color:orangered;"
-                                        @click="deleteFile(template.id)">
+                                    <div v-if="template.authorId == userId" class="action-item"
+                                        style="background-color:orangered;" @click="deleteFile(template.id)">
                                         <i class="delete-icon"></i>
                                         <span>删除</span>
                                     </div>
                                     <div class="action-item" style="background-color:#409eff;"
-                                        @click="viewFileDetails(template.id,template.aiCaseName)">
+                                        @click="viewFileDetails(template.id)">
                                         <i class="view-icon"></i>
                                         <span>查看</span>
                                     </div>
                                     <div class="action-item" style="background-color:palevioletred;"
-                                        @click="downloadFile(template.id,template.aiCaseName)">
+                                        @click="downloadFile(template.id, template.aiCaseName)">
                                         <i class="download-icon"></i>
                                         <span>下载</span>
                                     </div>
-                                    <div class="action-item " style="background-color:greenyellow;"
-                                        @click="renameFile(template.id,template.aiCaseName)">
+                                    <div v-if="template.authorId == userId" class="action-item "
+                                        style="background-color:greenyellow;"
+                                        @click="renameFile(template.id, template.aiCaseName)">
                                         <i class="rename-icon"></i>
                                         <span>重命名</span>
                                     </div>
-
                                 </div>
                             </div>
                         </td>
@@ -539,8 +546,8 @@ button.active {
 }
 
 .file-management {
-    /* min-height: 100vh; */
-    padding: 2vw;                                  
+    min-height: 100vh;
+    padding: 2vw;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -549,10 +556,10 @@ button.active {
 
 .header {
     width: 100%;
-    margin-bottom: 4vh;                            
+    margin-bottom: 4vh;
     position: relative;
     left: 2vw;
-    max-width: 1400px;  
+    max-width: 1400px;
 }
 
 .create-file-btn {

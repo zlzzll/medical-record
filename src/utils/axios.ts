@@ -17,7 +17,7 @@ const service = axios.create({
 
 // 全局状态控制
 let isRefreshing = false;
-const requestQueue: (() => void)[] = [];
+// const requestQueue: (() => void)[] = [];
 const responseQueue: ((token: string) => void)[] = [];
 
 

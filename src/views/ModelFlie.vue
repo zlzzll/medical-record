@@ -7,7 +7,7 @@ import { useUserStore } from "../store";
 import formatDate from "../tools/formatDate";
 import { ElMessage, ElMessageBox } from 'element-plus';
 import axiosService from "../utils/axios-test"
-
+// import mammoth from 'mammoth';
 const userId = ref()
 
 
@@ -159,20 +159,31 @@ export default defineComponent({
 
         const viewFileDetails = async (id: number, name: string) => {
             try {
-                const response = await axiosService.get(`/api/template/download/${id}`);
-                console.log(response, "zhixxx")
+                const storedFileUrl = localStorage.getItem(`fileUrl_${id}`);
 
+                if (storedFileUrl) {
+                    console.log(`已存在 fileUrl，直接跳转: ${storedFileUrl}`);
+                    saveEditorState(id, name, storedFileUrl); // 存储 Editor 状态
+                    redirectToEditor(id, name, storedFileUrl);
+                    return;
+                }
+
+                const response = await axiosService.get(`/api/template/download/${id}`);
+                console.log(response, "zhixxx");
 
                 if (response.data.code === 200) {
                     console.log('模板详情:', response.data);
                     const fileUrl = response.data.data;
                     console.log('新的文件URL:', fileUrl);
-                    const encodedFileUrl = encodeURIComponent(fileUrl);
-                    // 跳转到 /Editor+URL
 
-                    window.location.href = `/Editor?id=${id}&name=${name}&fileUrl=${encodedFileUrl}`;
+                    if (fileUrl) {
+                        localStorage.setItem(`fileUrl_${id}`, fileUrl); // 仅存储第一次的 URL
+                        saveEditorState(id, name, fileUrl); // 存储 Editor 状态
+                        redirectToEditor(id, name, fileUrl);
+                    } else {
+                        ElMessage.error("文件 URL 为空");
+                    }
 
-                    // 显示成功提示
                     ElMessage.success('模板详情获取成功');
                 } else {
                     ElMessage.error(response.data.msg);
@@ -181,8 +192,28 @@ export default defineComponent({
                 ElMessage.error('获取模板详情失败');
                 console.error('Error fetching file details:', error);
             }
+        };
+        const saveEditorState = (id: number, name: string, fileUrl: string) => {
+            const editorState = { id, name, fileUrl };
+            localStorage.setItem('editorState', JSON.stringify(editorState));
+        };
+        const redirectToEditor = (id: number, name: string, fileUrl: string) => {
+            // 先检查 localStorage 是否有缓存的 Editor 状态
+            const cachedState = localStorage.getItem('editorState');
+            if (cachedState) {
+                const state = JSON.parse(cachedState);
+                console.log('使用缓存的 Editor 状态:', state);
+                window.location.href = `http://localhost:5173/Editor?id=${state.id}&name=${encodeURIComponent(state.name)}&fileUrl=${encodeURIComponent(state.fileUrl)}`;
+                return;
+            }
 
-            shouldShow.value = null;
+            // 如果没有缓存，正常跳转
+            const encodedFileUrl = encodeURIComponent(fileUrl);
+            const encodedName = encodeURIComponent(name);
+            const editorUrl = `http://localhost:5173/Editor?id=${id}&name=${encodedName}&fileUrl=${encodedFileUrl}`;
+
+            console.log(`跳转到: ${editorUrl}`);
+            window.location.href = editorUrl;
         };
 
 
@@ -230,15 +261,12 @@ export default defineComponent({
                     data: string;  // 这里已经是直接下载的URL
                     msg: string;
                 }>(`/api/template/download/${id}`);
-console.log(data )
+                console.log(data)
                 // 验证接口响应状态
                 if (data.code !== 200 || !data.data) {
                     ElMessage.error(data.msg || '获取下载链接失败');
                     return;
                 }
-
-
-
                 // 第二步：直接使用下载链接
                 const link = document.createElement('a');
                 link.href = data.data;  // 直接使用后端返回的下载地址
@@ -259,6 +287,9 @@ console.log(data )
                 shouldShow.value = null;
             }
         };
+
+
+
 
         // 重命名模板
         const renameFile = async (id: number, templatename: string) => {
@@ -515,7 +546,7 @@ a类模板提交json，上传该模板的模板有严格的格式校验；">?</s
                                 {{ formatDate(template.updateTime).split(" ")[2] }}
                             </div>
                         </td>
-                        <td style=" width: 50px;height: 50px; ">
+                        <td >
                             <button style="align-items: center; " class="goto" @click="goToFileManage(template)">
                                 <svg t="1740899969657" class="icon" viewBox="0 0 1024 1024" version="1.1"
                                     xmlns="http://www.w3.org/2000/svg" p-id="4149" width="200" height="200">
@@ -620,7 +651,7 @@ button.active {
 
 /* 模板管理区域整体布局 */
 .file-management {
-    min-height: 100vh;
+    /* min-height: 10000vh; */
     padding: 2vw;
     box-sizing: border-box;
     display: flex;

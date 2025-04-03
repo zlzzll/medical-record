@@ -64,54 +64,50 @@ const handleScroll = async (e: Event) => {
 }
 
 const handleSubmit = async () => {
-  const typename = ".docx"; // 模板类型
+  const typename = ".docx";
   if (!fileName.value) {
     ElMessage.warning('请输入文件名称');
     return;
   }
 
   try {
-    // 发送请求，创建文件并获取 caseId
     const response = await axiosService.post("/api/record/create", {
       templateId: templateId.value,
       aiCaseName: fileName.value + typename
     });
 
-    // 假设后端返回的 response 中包含 caseId
     const caseId = response.data.data.caseId;
-// console.log(response)
     if (!caseId) {
       ElMessage.error('创建文件失败，没有返回 caseId');
       return;
     }
 
-    // 根据 templateId 请求文件 URL
-    const fileResponse = await axiosService.get(`/api/template/download/${templateId.value}`);
-
-    if (fileResponse.data.code === 200) {
-      const fileUrl = fileResponse.data.data; // 获取 fileUrl
-
-      if (!fileUrl) {
+    let fileUrl = localStorage.getItem(`fileUrl_${templateId.value}`);
+    if (!fileUrl) {
+      const fileResponse = await axiosService.get(`/api/template/download/${templateId.value}`);
+      if (fileResponse.data.code === 200) {
+        const fileUrl = fileResponse.data.data;
+        localStorage.setItem(`fileUrl_${templateId.value}`, fileUrl);
+      } else {
         ElMessage.error('获取文件 URL 失败');
         return;
       }
-
-      // 编码 fileUrl，避免特殊字符
-      const encodedFileUrl = encodeURIComponent(fileUrl);
-
-      // 跳转到 Editor 页面，携带 templateId, caseId, fileName 和 fileUrl
-      const encodedFileName = encodeURIComponent(fileName.value + typename); // 编码文件名
-      window.location.href = `/FileEditor?templateId=${templateId.value}&caseId=${caseId}&fileName=${encodedFileName}&fileUrl=${encodedFileUrl}`;
-
-      ElMessage.success('文件创建并跳转成功');
-    } else {
-      ElMessage.error('获取文件 URL 失败');
     }
+
+    // 存入本地映射
+    const fileMappings = JSON.parse(localStorage.getItem('fileMappings') || '{}');
+    fileMappings[caseId] = { templateId: templateId.value, fileName: fileName.value + typename, fileUrl };
+    localStorage.setItem('fileMappings', JSON.stringify(fileMappings));
+
+    window.location.href = "/filemanage";
+    ElMessage.success('文件创建成功');
   } catch (e) {
     console.error(e);
     ElMessage.error('文件创建失败');
   }
 };
+
+
 
 
 // 7. 生命周期管理（网页3）

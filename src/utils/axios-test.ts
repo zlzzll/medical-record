@@ -1,7 +1,7 @@
 import axios from "axios";
 import host from "../config/hostname";
 import router from "../router";
-import { ElMessage } from 'element-plus';
+
 const hostname = host();
 
 const service = axios.create({
@@ -9,7 +9,6 @@ const service = axios.create({
   // baseURL: hostname,
   timeout: 15000,
 });
-
 // 请求拦截器（保持不变）
 service.interceptors.request.use(
   config => {

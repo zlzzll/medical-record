@@ -26,8 +26,13 @@ const handleFileChange = (event: Event) => {
 };
 
 const handleFile = (file: File | undefined) => {
-  if (!file) return;
 
+  if (!file) return;
+  if(!file.name.endsWith('.docx')){
+      ElMessage.error('请上传docx格式的文件');
+      // ElMessage.error('文件上传失败，请重试');
+      return;
+    }
   // 单文件限制：清空已有文件
   if (fileList.value.length >= 1) {
     fileList.value = [];

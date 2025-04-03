@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus';
-import axios from 'axios';
+// import axios from 'axios';
 import axiosService from '../utils/axios-test';
 
 const router = useRouter()
@@ -41,7 +41,7 @@ const test = async () => {
   } 
   const users = JSON.parse(user)
   
-  const token = JSON.parse(sessionStorage.getItem("accessToken")!);
+  // const token = JSON.parse(sessionStorage.getItem("accessToken")!);
   
   try {
     // console.log("id:"+users.id)

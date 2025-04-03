@@ -7,29 +7,8 @@
       <textarea id="editor" v-model="form.content"></textarea>
     </div>
     <div style="margin-left: 1200px;margin-top: 20px;">
-      <button @click="back" style="border-color: black;">返回</button>
-      <!-- <div style="background: #44d5a9;width: 300px;height: 600px;margin-top: 10px;">AI</div> -->
-      <div class="ai-container">
-        <!-- 加载状态 -->
-        <div v-if="isLoading" class="loading-container">
-          <div class="loading-spinner"></div>
-          <div class="loading-text">AI正在思考中...</div>
-        </div>
-
-        <!-- AI生成结果 -->
-        <div v-else class="results-container">
-          <div v-for="(record, index) in aiRecords" :key="index" class="result-card" @click="handleRecordClick(index)">
-            <div class="card-header">
-              <div class="ai-icon">AI</div>
-              <div class="card-title">生成方案 {{ index + 1 }}</div>
-            </div>
-            <div class="card-content">
-              {{ record.displayText }}
-              <span class="typing-cursor"></span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <button>返回</button>
+      <div style="background: #44d5a9;width: 200px;height: 200px;">AI</div>
     </div>
   </div>
 </template>
@@ -43,11 +22,10 @@ import { saveAs } from "file-saver";
 import docx2html from "docx2html";
 import mammoth from "mammoth";
 import PizZip from "pizzip";
-// import {  onMounted, nextTick } from 'vue';
+
 
 const htmlContent = ref('');
 const fileContent = ref(""); // 响应式变量，存储文件内容
-
 export default defineComponent({
   name: 'FileEditor',
   setup() {
@@ -57,122 +35,57 @@ export default defineComponent({
 
     //AI
     let debounceTimer = null;
-    const isLoading = ref(false)
-    const aiRecords = reactive([])
-
-    // 模拟数据
-    const mockData = [
-      "患者主诉持续性头痛伴恶心，查体显示血压升高（160/95mmHg），建议进行头颅CT检查及24小时动态血压监测，暂予硝苯地平控释片30mg qd降压治疗。",
-      "根据患者心电图ST段压低及胸痛症状，考虑不稳定型心绞痛可能，建议立即查心肌酶谱、肌钙蛋白，并行冠脉造影评估，给予阿司匹林300mg负荷量，硝酸甘油舌下含服。"
-    ]
-
-    const typeText = (text, index) => {
-      let charIndex = 0
-      aiRecords[index].displayText = ''
-
-      const typing = setInterval(() => {
-        if (charIndex < text.length) {
-          aiRecords[index].displayText += text.charAt(charIndex)
-          charIndex++
-        } else {
-          clearInterval(typing)
-        }
-      }, 30) // 调整速度
-    }
 
     const generateMedicalRecord = async () => {
       try {
-        isLoading.value = true
-        aiRecords.length = 0 // 清空旧数据
-
-        // 模拟API延迟
-        await new Promise(resolve => setTimeout(resolve, 1500))
-
-        // 填充模拟数据
-        mockData.forEach((text, index) => {
-          aiRecords.push({
-            fullText: text,
-            displayText: ''
-          })
-          setTimeout(() => typeText(text, index), index * 500) // 错开打印时间
-        })
-      } finally {
-        isLoading.value = false
-      }
-    }
-    const handleRecordClick = (index) => {
-      const editor = window.tinymce.get("editor")
-      if (editor) {
-        try {
-          editor.focus()
-          editor.insertContent(aiRecords[index].fullText + "<br>")
-          const selection = editor.selection
-          selection.collapse(false)
-        } catch (e) {
-          console.error("内容插入失败:", e)
+        const editorInstance = window.tinymce.get("editor");
+        if (!editorInstance) {
+          console.error("TinyMCE 未初始化");
+          return;
         }
+
+        const content = editorInstance.getContent() || "";
+        if (!content.trim()) {
+          console.warn("病历文本为空");
+          return;
+        }
+
+        console.log("发送 AI 生成病历请求:", content);
+        const response = await axiosService.post("/api/record/ai/generate", {
+          text: content,
+        });
+
+        console.log("AI 生成病历:", response.data);
+      } catch (error) {
+        console.error("病历生成失败:", error);
       }
-
-      console.groupCollapsed(`点击第 ${index + 1} 个生成方案`)
-      console.log('序号:', index + 1)
-      console.log('完整内容:', aiRecords[index].fullText)
-      console.log('当前显示:', aiRecords[index].displayText)
-      console.groupEnd()
-    }
-    // const generateMedicalRecord = async () => {
-    //   try {
-    //     const editorInstance = window.tinymce.get("editor");
-    //     if (!editorInstance) {
-    //       console.error("TinyMCE 未初始化");
-    //       return;
-    //     }
-
-    //     const content = editorInstance.getContent() || "";
-    //     if (!content.trim()) {
-    //       console.warn("病历文本为空");
-    //       return;
-    //     }
-
-    //     console.log("发送 AI 生成病历请求:", content);
-    //     const response = await axiosService.post("/api/record/ai/generate", {
-    //       text: content,
-    //     });
-
-    //     console.log("AI 生成病历:", response.data);
-    //   } catch (error) {
-    //     console.error("病历生成失败:", error);
-    //   }
-    // };
+    };
 
     // 监听 TinyMCE 变化
     const setupEditorListener = (editor) => {
-      let lastCursorPos = null
-
-      editor.on("click keyup", (e) => {
-        lastCursorPos = editor.selection.getRng()
-      })
-
       editor.on("change input keyup", () => {
-        clearTimeout(debounceTimer)
-        debounceTimer = setTimeout(generateMedicalRecord, 1000)
-      })
-    }
+        if (debounceTimer) clearTimeout(debounceTimer);
 
+        debounceTimer = setTimeout(() => {
+          generateMedicalRecord();
+        }, 1000); // **防抖 2 秒，避免频繁请求**
+      });
+    };
+    // 动态引入 TinyMCE
     const loadTinyMCE = () => {
       return new Promise((resolve, reject) => {
-        if (window.tinymce) return resolve()
-
-        const script = document.createElement('script')
-        script.src = '/tinymce/tinymce.min.js'
-        script.onload = resolve
-        script.onerror = reject
-        document.head.appendChild(script)
-      })
-    }
+        const script = document.createElement('script');
+        script.src = '/tinymce/tinymce.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    };
     // 提取 URL 参数
     const urlParams = new URLSearchParams(window.location.search);
     const caseId = urlParams.get('caseId');
     const fileUrl = urlParams.get('fileUrl');
+    const name = urlParams.get('fileName');
 
     // // 控制台输出
     // console.log('id:', id);
@@ -286,23 +199,19 @@ export default defineComponent({
       });
     });
 
-
     const exportToWord = async () => {
       const content = window.tinymce.get("editor").getContent(); // 获取 HTML 内容
-      console.log(content)
       const blob = new Blob(["\ufeff" + content], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
-      // console.log(name)
-      // const filename = name.replace(/\.docx$/i, '') + ".docx"; // 避免重复 .docx
-      let filename = "exported_document.docx"; // 默认文件名
+
+      const filename = name.replace(/\.docx$/i, '') + ".docx"; // 避免重复 .docx
       saveAs(blob, filename); // 下载 Word 文件
 
       // 延迟上传，确保文件下载完
       setTimeout(() => {
         uploadTemplate(blob, filename);
       }, 1000);
-
     };
 
     const uploadTemplate = async (fileBlob, filename) => {
@@ -325,7 +234,7 @@ export default defineComponent({
 
       try {
         // 发送 POST 请求上传文件
-        const response = await axiosService.post("/api/template/save", formData, {
+        const response = await axiosService.post("/api/record/save", formData, {
           headers: { "Content-Type": "multipart/form-data" }
         });
 
@@ -337,18 +246,11 @@ export default defineComponent({
         console.error("文件保存失败:", error);
       }
     };
-    const back = () => {
-      window.location.href = '/filemanage'
-    };
+
 
     return {
       form,
-      exportToWord,
-      back,
-      isLoading,
-      aiRecords,
-      generateMedicalRecord,
-      handleRecordClick
+      exportToWord
     };
   }
 
@@ -358,110 +260,6 @@ export default defineComponent({
 </script>
 
 <style>
-.ai-container {
-  background: #f5f9fc;
-  padding: 2rem;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 128, 0.08);
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 2rem;
-}
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid #e3f2fd;
-  border-radius: 50%;
-  border-top-color: #44d5a9;
-  animation: spin 1s ease-in-out infinite;
-}
-
-.loading-text {
-  margin-top: 1rem;
-  color: #2c3e50;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.results-container {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.result-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 128, 0.06);
-  transition: transform 0.2s;
-}
-
-.result-card:hover {
-  transform: translateY(-2px);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.8rem;
-}
-
-.ai-icon {
-  background: #44d5a9;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-}
-
-.card-title {
-  margin-left: 1rem;
-  font-size: 1.2rem;
-  color: #2c3e50;
-  font-weight: 600;
-}
-
-.card-content {
-  line-height: 1.6;
-  color: #4a5568;
-  font-size: 1rem;
-  min-height: 80px;
-  white-space: pre-wrap;
-}
-
-.typing-cursor {
-  display: inline-block;
-  width: 8px;
-  height: 1.2em;
-  background: #44d5a9;
-  margin-left: 2px;
-  animation: blink 1s step-end infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
-}
-
-
 #app2 {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
