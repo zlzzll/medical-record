@@ -169,140 +169,153 @@ export default defineComponent({
         document.head.appendChild(script)
       })
     }
-    // 提取 URL 参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const caseId = urlParams.get('caseId');
-    const fileUrl = urlParams.get('fileUrl');
+// 提取 URL 参数
+const urlParams = new URLSearchParams(window.location.search);
+const caseId = urlParams.get('caseId');
+const fileUrl = urlParams.get('fileUrl');
 
-    // // 控制台输出
-    // console.log('id:', id);
-    // console.log('fileUrl:', fileUrl);
-    const convertWordToHtml = async () => {
-      try {
-        if (!fileUrl) {
-          throw new Error("fileUrl 参数缺失");
-        }
+// 缓存状态
+const fileContent = ref(null); // 缓存内容
+const htmlContent = ref(null); // HTML 内容
 
-        const response = await fetch(fileUrl);
-        if (!response.ok) {
-          throw new Error(`文件获取失败: ${response.status} ${response.statusText}`);
-        }
+// 页面加载时
+onMounted(async () => {
+  // 1. 优先从缓存中获取内容
+  const savedContents = JSON.parse(localStorage.getItem("savedContents") || '{}');
+  const cachedContent = savedContents[caseId];
 
-        const buffer = await response.arrayBuffer();
+  if (cachedContent) {
+    fileContent.value = cachedContent; // 使用缓存内容
+    console.log("使用缓存内容:", cachedContent);
+  } else {
+    // 2. 如果没有缓存，调用 convertWordToHtml 获取内容
+    await convertWordToHtml(); // 等待 HTML 数据加载
+  }
 
-        // 使用 Mammoth 提取 HTML 格式
-        const htmlResult = await mammoth.convertToHtml({ arrayBuffer: buffer });
-        let processedHtml = htmlResult.value;
-
-        // 处理图片路径，防止相对路径无法显示
-        processedHtml = processedHtml.replace(/<img[^>]+src="([^">]+)"/g, (match, src) => {
-          return src.startsWith('http') ? match : match.replace(src, 'http://example.com/default-image.jpg');
-        });
-
-        htmlContent.value = processedHtml;
-        fileContent.value = processedHtml; // **用 HTML 格式存储内容**
-        console.log("转换后的 HTML:", fileContent.value);
-
-      } catch (err) {
-        console.error("文档转换失败:", err);
-      }
-    };
-
-
-    // 页面加载时
-    onMounted(async () => {
-      await convertWordToHtml(); // 等待 HTML 数据加载
-      loadTinyMCE().then(() => {
-        // 富文本编辑器
-        nextTick(() => {
-          window.tinymce.init({
-            // file_picker_callback: handleUploadFile,
-            // file_picker_types: 'file image media',
-            autosave_interval: '5000',
-            autosave_prefix: 'tinymce-autosave-{path}{query}-{id}-',
-            autosave_restore_when_empty: true,
-            autosave_retention: '2m',
-            selector: '#editor', // 选择器，指定哪个元素使用 TinyMCE
-            license_key: 'gpl', // 许可密钥，如果是 GPL 版本则不需要设置
-            language: 'zh_CN', // 语言设置
-            width: '109%', // 编辑器宽度
-            height: '700px', // 编辑器高度
-            menubar: true, // 是否显示菜单栏
-            statusbar: true, // 是否显示状态栏
-            branding: false, // 去除底部的 TinyMCE 广告
-            plugins: [
-              'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
-              'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media',
-              'table', 'help', 'wordcount', 'emoticons', 'autosave', 'quickbars', 'codesample'
-            ], // 启用的插件列表
-            toolbar: [
-              'code formatselect fontselect fontsizeselect forecolor backcolor bold italic underline strikethrough link alignment outdent indent bullist numlist blockquote subscript superscript removeformat table image media importword charmap pagebreak formatpainter cut copy undo redo restoredraft searchreplace fullscreen'
-            ], // 工具栏按钮列表
-            toolbar_sticky: true, // 工具栏固定在顶部
-            content_css: '/path/to/content.css', // 自定义内容样式文件路径
-            content_style: `
-                h2 { position: relative; z-index: 99; }
-                h2::before {
-                  content: "";
-                  display: block;
-                  width: 200px;
-                  height: 8px;
-                  position: absolute;
-                  bottom: 6px;
-                  left: -4px;
-                  z-index: -1;
-                  border-radius: 4px 0 0 4px;
-                  background: linear-gradient(90deg, #F6AFB0 0%, #FFFFFF 100%);
-                }
-              `, // 自定义编辑器内容的样式
-            images_upload_handler: (blobInfo, success, failure) => {
-              const xhr = new XMLHttpRequest();
-              xhr.withCredentials = false;
-              xhr.open('POST', '/your-backend-endpoint'); // 图片上传的后端接口
-              xhr.onload = () => {
-                if (xhr.status === 200) {
-                  success(xhr.responseText); // 上传成功，返回图片 URL
-                } else {
-                  failure('HTTP Error: ' + xhr.status); // 上传失败，返回错误信息
-                }
-              };
-              xhr.onerror = () => {
-                failure('Image upload failed due to a network error.'); // 网络错误
-              };
-              xhr.send(blobInfo.blob()); // 发送图片数据
-            },
-            setup: (editor) => {
-              editor.on('init', () => {
-                if (fileContent.value) {
-                  editor.setContent(fileContent.value); // 设置 TinyMCE 编辑器的内容
-                }
-                setupEditorListener(editor);
-              });
+  // 3. 初始化 TinyMCE 编辑器
+  loadTinyMCE().then(() => {
+    nextTick(() => {
+      window.tinymce.init({
+        selector: '#editor',
+        license_key: 'gpl',
+        language: 'zh_CN',
+        width: '109%',
+        height: '700px',
+        menubar: true,
+        statusbar: true,
+        branding: false,
+        plugins: [
+          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview', 'anchor',
+          'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media',
+          'table', 'help', 'wordcount', 'emoticons', 'autosave', 'quickbars', 'codesample'
+        ],
+        toolbar: [
+          'code formatselect fontselect fontsizeselect forecolor backcolor bold italic underline strikethrough link alignment outdent indent bullist numlist blockquote subscript superscript removeformat table image media importword charmap pagebreak formatpainter cut copy undo redo restoredraft searchreplace fullscreen'
+        ],
+        toolbar_sticky: true,
+        content_css: '/path/to/content.css',
+        content_style: `
+          h2 { position: relative; z-index: 99; }
+          h2::before {
+            content: "";
+            display: block;
+            width: 200px;
+            height: 8px;
+            position: absolute;
+            bottom: 6px;
+            left: -4px;
+            z-index: -1;
+            border-radius: 4px 0 0 4px;
+            background: linear-gradient(90deg, #F6AFB0 0%, #FFFFFF 100%);
+          }
+        `,
+        images_upload_handler: (blobInfo, success, failure) => {
+          const xhr = new XMLHttpRequest();
+          xhr.withCredentials = false;
+          xhr.open('POST', '/your-backend-endpoint');
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              success(xhr.responseText);
+            } else {
+              failure('HTTP Error: ' + xhr.status);
             }
+          };
+          xhr.onerror = () => {
+            failure('Image upload failed due to a network error.');
+          };
+          xhr.send(blobInfo.blob());
+        },
+        setup: (editor) => {
+          editor.on('init', () => {
+            if (fileContent.value) {
+              editor.setContent(fileContent.value); // 设置内容
+            }
+            setupEditorListener(editor); // 你自己的监听器
           });
-        });
-      }).catch(error => {
-        console.error('Failed to load TinyMCE:', error); // 处理 TinyMCE 加载失败的情况
+        }
       });
     });
+  }).catch(error => {
+    console.error('Failed to load TinyMCE:', error);
+  });
+});
 
+// 转换 Word 到 HTML
+const convertWordToHtml = async () => {
+  try {
+    if (!fileUrl) {
+      throw new Error("fileUrl 参数缺失");
+    }
 
-    const exportToWord = async () => {
-      const content = window.tinymce.get("editor").getContent(); // 获取 HTML 内容
-      console.log(content)
-      const blob = new Blob(["\ufeff" + content], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      // console.log(name)
-      // const filename = name.replace(/\.docx$/i, '') + ".docx"; // 避免重复 .docx
-      let filename = "exported_document.docx"; // 默认文件名
-      saveAs(blob, filename); // 下载 Word 文件
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error(`文件获取失败: ${response.status} ${response.statusText}`);
+    }
 
-      // 延迟上传，确保文件下载完
-      setTimeout(() => {
-        uploadTemplate(blob, filename);
-      }, 1000);
+    const buffer = await response.arrayBuffer();
+    const htmlResult = await mammoth.convertToHtml({ arrayBuffer: buffer });
+    let processedHtml = htmlResult.value;
 
+    // 替换 img 的 src，防止相对路径无法显示
+    processedHtml = processedHtml.replace(/<img[^>]+src="([^">]+)"/g, (match, src) => {
+      return src.startsWith('http') ? match : match.replace(src, '<url id="cvnl16ij4eglsjudn39g" type="url" status="failed" title="" wc="0">http://example.com/default-image.jpg</url>  ');
+    });
+
+    htmlContent.value = processedHtml;
+    fileContent.value = processedHtml; // 缓存 HTML
+    console.log("转换后的 HTML:", processedHtml);
+
+  } catch (err) {
+    console.error("文档转换失败:", err);
+  }
+};
+
+// 导出到 Word
+const exportToWord = async () => {
+  const content = window.tinymce.get("editor").getContent(); // 获取 HTML 内容
+  const blob = new Blob(["\ufeff" + content], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+  let filename = "exported_document.docx"; // 默认文件名
+  saveAs(blob, filename); // 下载 Word 文件
+
+  // 延迟上传，确保文件下载完
+  setTimeout(() => {
+    uploadTemplate(blob, filename);
+  }, 1000);
+
+  // 保存到 localStorage
+  const savedContents = JSON.parse(localStorage.getItem("savedContents") || '{}');
+  savedContents[caseId] = content;
+  localStorage.setItem("savedContents", JSON.stringify(savedContents));
+
+  ElMessage.success("内容已保存");
+};
+
+    // 辅助函数：获取 URL 参数
+    const getQueryParam = (key) => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(key);
     };
 
     const uploadTemplate = async (fileBlob, filename) => {
