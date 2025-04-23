@@ -189,28 +189,32 @@ export default defineComponent({
 
         // 创建枚举值映射
         const enumMap = {
-          "主诉": "complaints",
           "现病史": "current_history",
           "既往史": "recent_history",
           "诊断": "diagnosis",
-          "建议": "advice"
+          "建议": "advice",
+          "诊断": "initial_diagnosis",
+          "体格检查": "physical_examination",
+          "辅助检查": "investigations"
         };
 
         // 处理前两个字符
         const firstTwoChars = textToSend.length >= 2
-          ? textToSend.substring(0, 2) === "主诉"
-            ? "主诉"
-            : textToSend.substring(0, 3) === "现病史"
-              ? "现病史"
-              : textToSend.substring(0, 3) === "既往史"
-                ? "既往史"
-                : textToSend.substring(0, 4) === "初步诊断"
-                  ? "诊断"
-                  : textToSend.substring(0, 2) === "建议"
-                    ? "建议"
-                    : "现病史"
+          ? textToSend.substring(0, 2) === "现病史"
+            ? "现病史"
+              : textToSend.substring(0, 4) === "体格检查"
+                ? "体格检查"
+                : textToSend.substring(0, 4) === "辅助检查"
+                  ? "辅助检查"
+                  : textToSend.substring(0, 3) === "既往史"
+                    ? "既往史"
+                    : textToSend.substring(0, 2) === "诊断"
+                      ? "诊断"
+                      : textToSend.substring(0, 2) === "建议"
+                        ? "建议"
+                        : "现病史"
           : "现病史";
-
+        console.log(firstTwoChars)
         // 获取对应的枚举值
         const textEnumValue = enumMap[firstTwoChars] || "current_history";
 
@@ -313,7 +317,7 @@ export default defineComponent({
             const currentText = extractCurrentSectionContent(currentNode);
 
             // 判断光标是否在“主诉”或“现病史”后面
-            if (isCursorAfterKeywords(editor, currentNode, ["现病史","既往史","初步诊断","建议"])) {
+            if (isCursorAfterKeywords(editor, currentNode, ["现病史", "既往史", "诊断", "建议", "体格检查", "辅助检查"])) {
               generateMedicalRecord(currentText);
             }
           }
