@@ -190,14 +190,25 @@ export default defineComponent({
         // 创建枚举值映射
         const enumMap = {
           "主诉": "complaints",
-          "现病史": "current_history"
+          "现病史": "current_history",
+          "既往史": "recent_history",
+          "诊断": "diagnosis",
+          "建议": "advice"
         };
 
         // 处理前两个字符
         const firstTwoChars = textToSend.length >= 2
           ? textToSend.substring(0, 2) === "主诉"
             ? "主诉"
-            : "现病史"
+            : textToSend.substring(0, 3) === "现病史"
+              ? "现病史"
+              : textToSend.substring(0, 3) === "既往史"
+                ? "既往史"
+                : textToSend.substring(0, 4) === "初步诊断"
+                  ? "诊断"
+                  : textToSend.substring(0, 2) === "建议"
+                    ? "建议"
+                    : "现病史"
           : "现病史";
 
         // 获取对应的枚举值
@@ -302,7 +313,7 @@ export default defineComponent({
             const currentText = extractCurrentSectionContent(currentNode);
 
             // 判断光标是否在“主诉”或“现病史”后面
-            if (isCursorAfterKeywords(editor, currentNode, ["主诉", "现病史"])) {
+            if (isCursorAfterKeywords(editor, currentNode, ["现病史","既往史","初步诊断","建议"])) {
               generateMedicalRecord(currentText);
             }
           }

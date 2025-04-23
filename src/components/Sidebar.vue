@@ -62,7 +62,7 @@ const navigateTo = (path: string) => {
         <el-icon>
           <User />
         </el-icon>
-        <span class="menu-text">用户设置</span>
+        <span class="menu-text">个人信息</span>
       </div>
     </div>
   </div>
