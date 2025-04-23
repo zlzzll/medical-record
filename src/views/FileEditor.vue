@@ -54,10 +54,10 @@
           </div>
         </div>
         <!-- 底部输入框 -->
-        <div class="bottom-bar" id="input-with-button">
+        <!-- <div class="bottom-bar" id="input-with-button">
           <input type="text" placeholder="有什么问题需要智联笔帮忙？" v-model="userInput" @keyup.enter="handleUserInput">
           <button @click="handleUserInput" class="sendbutton">发送</button>
-        </div>
+        </div> -->
       </div>
     </div>
 
@@ -135,20 +135,7 @@ export default defineComponent({
     const saveMessages = () => {
       localStorage.setItem('aiChatHistory', JSON.stringify(messages));
     };
-    // 监听消息更新并自动滚动到底部
-    watch(messages, () => {
-      nextTick(() => {
-        scrollToBottom();
-      });
-    }, { deep: true });
-
-    // 滚动到底部的函数
-    const scrollToBottom = () => {
-      const contentContainer = document.querySelector('.content-container');
-      if (contentContainer) {
-        contentContainer.scrollTop = contentContainer.scrollHeight;
-      }
-    };
+    
     // 页面加载时清空聊天记录
     onMounted(() => {
       // 清空 messages 数组
@@ -202,17 +189,17 @@ export default defineComponent({
         const firstTwoChars = textToSend.length >= 2
           ? textToSend.substring(0, 2) === "现病史"
             ? "现病史"
-              : textToSend.substring(0, 4) === "体格检查"
-                ? "体格检查"
-                : textToSend.substring(0, 4) === "辅助检查"
-                  ? "辅助检查"
-                  : textToSend.substring(0, 3) === "既往史"
-                    ? "既往史"
-                    : textToSend.substring(0, 2) === "诊断"
-                      ? "诊断"
-                      : textToSend.substring(0, 2) === "建议"
-                        ? "建议"
-                        : "现病史"
+            : textToSend.substring(0, 4) === "体格检查"
+              ? "体格检查"
+              : textToSend.substring(0, 4) === "辅助检查"
+                ? "辅助检查"
+                : textToSend.substring(0, 3) === "既往史"
+                  ? "既往史"
+                  : textToSend.substring(0, 2) === "诊断"
+                    ? "诊断"
+                    : textToSend.substring(0, 2) === "建议"
+                      ? "建议"
+                      : "现病史"
           : "现病史";
         console.log(firstTwoChars)
         // 获取对应的枚举值
@@ -266,7 +253,20 @@ export default defineComponent({
       }
     };
 
+// 滚动到底部的函数
+const scrollToBottom = () => {
+      const contentContainer = document.querySelector('.content-container');
+      if (contentContainer) {
+        contentContainer.scrollTop = contentContainer.scrollHeight;
+      }
+    };
 
+    // 监听消息更新并自动滚动到底部
+    watch(messages, () => {
+      nextTick(() => {
+        scrollToBottom();
+      });
+    }, { deep: true });
     //点击粘贴
     const handleRecordClick = (index) => {
       const editor = window.tinymce.get("editor");
