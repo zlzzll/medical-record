@@ -41,14 +41,14 @@ const navigateTo = (path: string) => {
         <el-icon>
           <Document />
         </el-icon>
-        <span class="menu-text">文件管理</span>
+        <span class="menu-text">病历管理</span>
       </div>
 
       <div class="menu-item" @click="navigateTo('/createfile')" :class="{ active: route.path === '/createfile' }">
         <el-icon>
           <DocumentAdd />
         </el-icon>
-        <span class="menu-text">创建文件</span>
+        <span class="menu-text">创建病历</span>
       </div>
       
       <div class="menu-item" @click="navigateTo('/permissions')" :class="{ active: route.path === '/permissions' }">

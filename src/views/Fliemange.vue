@@ -444,7 +444,7 @@ export default defineComponent({
                 </div>
 
                 <el-button type="primary" class="create-file-btn" @click="gotoFileCreate">
-                    <span class="btn-text">创建文件</span>
+                    <span class="btn-text">创建病历</span>
                     <el-icon class="btn-icon">
                         <Plus />
                     </el-icon>
@@ -561,7 +561,7 @@ export default defineComponent({
                         </el-table-column>
 
                         <el-table-column label="操作" width="150" align="center">
-                            <template #default="{ row }" #dropdown>
+                            <template #default="{ row }" >
                                 <div class="action-buttons">
                                     <el-tooltip content="查看详情" placement="top">
                                         <el-button circle size="small" @click="viewFileDetails(row.id)"
@@ -851,7 +851,7 @@ button {
     margin-top: 0.25rem;
 }
 
-/* 创建文件按钮 */
+/* 创建病历按钮 */
 .create-file-btn {
     position: relative;
     overflow: hidden;

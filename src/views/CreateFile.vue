@@ -78,7 +78,7 @@ const handleSubmit = async () => {
 
     const caseId = response.data.data.caseId;
     if (!caseId) {
-      ElMessage.error('创建文件失败，没有返回 caseId');
+      ElMessage.error('创建病历失败，没有返回 caseId');
       return;
     }
 
@@ -114,10 +114,10 @@ const handleSubmit = async () => {
     const encodedFileUrl = encodeURIComponent(fileUrl || '');
     window.location.href = `/FileEditor?caseId=${caseId}&fileName=${encodedFileName}&fileUrl=${encodedFileUrl}`;
 
-    ElMessage.success('文件创建成功');
+    ElMessage.success('病历文件创建成功');
   } catch (e) {
     console.error(e);
-    ElMessage.error('文件创建失败');
+    ElMessage.error('病历文件创建失败');
   }
 };
 
@@ -158,8 +158,8 @@ onBeforeUnmount(() => {
           </svg>
         </div>
         <div style="display: flex;flex-direction: column;">
-          <h2>创建新文件</h2>
-        <p>选择模板并命名您的文件</p>
+          <h2>创建新病历</h2>
+        <p>选择模板并命名您的病历</p>
         </div>
       </div>
 
@@ -179,10 +179,10 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="form-group">
-          <label>文件名称 <span class="required">*</span></label>
+          <label>病历名称 <span class="required">*</span></label>
           <el-input 
             v-model="fileName" 
-            placeholder="请输入文件名称" 
+            placeholder="请输入病历名称" 
              :clearable="true"
             class="file-input"
           />
@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
           class="submit-btn"
           :icon="DocumentAdd"
         >
-          创建文件
+          创建病历
         </el-button>
       </div>
     </div>

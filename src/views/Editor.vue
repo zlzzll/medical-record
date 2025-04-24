@@ -190,7 +190,7 @@ export default defineComponent({
       const file = new File([fileBlob], filename, {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
-      console.log("文件 MIME 类型:", file.type);
+      // console.log("文件 MIME 类型:", file.type);
       let formData = new FormData();
       formData.append("multipartFile", file, filename);
 
