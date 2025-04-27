@@ -63,6 +63,7 @@ const handleScroll = async (e: Event) => {
   }
 }
 
+const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
 const handleSubmit = async () => {
   const typename = ".docx";
   if (!fileName.value) {
@@ -73,7 +74,7 @@ const handleSubmit = async () => {
   try {
     const response = await axiosService.post("/api/record/create", {
       templateId: templateId.value,
-      aiCaseName: fileName.value + typename
+      aiCaseName:  `${fileName.value}__${userInfo.organization}${typename}` 
     });
 
     const caseId = response.data.data.caseId;
@@ -120,7 +121,6 @@ const handleSubmit = async () => {
     ElMessage.error('病历文件创建失败');
   }
 };
-
 
 
 

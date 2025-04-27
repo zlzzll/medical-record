@@ -3,7 +3,7 @@ import router from "../router";
 
 
 const service = axios.create({
-  // baseURL: import.meta.env.VITE_API_BASE_URL, // 结合环境变量[7](@ref)
+  // baseURL: 'http://10.16.82.117:51007', // 结合环境变量[7](@ref)
   timeout: 15000,
 });
 

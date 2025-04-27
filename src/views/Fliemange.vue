@@ -236,13 +236,13 @@ export default defineComponent({
         const renameFile = async (id: number, filename: string) => {
             try {
                 const { value: newName } = await ElMessageBox.prompt(
-                    '请输入新模板名',
-                    '重命名模板',
+                    '请输入新病历名',
+                    '重命名病历',
                     {
                         confirmButtonText: '确认',
                         cancelButtonText: '取消',
                         inputPattern: /\S+/, // 非空验证
-                        inputErrorMessage: '模板名不能为空'
+                        inputErrorMessage: '病历名不能为空'
                     }
                 );
                 const regex = /\.[^.]*$/;
@@ -425,10 +425,10 @@ export default defineComponent({
                 <div class="header-content">
                     <div class="title-wrapper">
                         <h1 class="page-title">
-                            <span class="title-text">文件管理</span>
+                            <span class="title-text">病历资料</span>
                             <span class="title-highlight"></span>
                         </h1>
-                        <p class="page-subtitle">高效管理您的文档文件资源 <span class="blink-dot">·</span></p>
+                        <p class="page-subtitle">高效管理您的病历文档资源 <span class="blink-dot">·</span></p>
                     </div>
                     <div class="header-stats">
                         <div class="stat-card">
@@ -461,7 +461,7 @@ export default defineComponent({
                     </div>
                     <div class="filter-item">
                         <label>文档名称</label>
-                        <el-input v-model="filters.filename" placeholder="输入文档名称" :clearable="true" class="filter-input" />
+                        <el-input v-model="filters.filename" placeholder="输入文档名称" :clearable="true" class="filter-input"/>
                     </div>
                     <div class="filter-item">
                         <label>关联模板</label>
@@ -514,7 +514,7 @@ export default defineComponent({
                             </template>
                         </el-table-column>
 
-                        <el-table-column prop="aiCaseName" label="文档名称" min-width="200">
+                        <el-table-column prop="aiCaseName" label="文档名称" min-width="150">
                             <template #default="{ row }">
                                 <div class="file-name-cell">
                                     <el-icon class="file-icon">
@@ -525,7 +525,7 @@ export default defineComponent({
                             </template>
                         </el-table-column>
 
-                        <el-table-column prop="templateName" label="关联模板" width="180">
+                        <el-table-column prop="templateName" label="关联模板" width="350">
                             <template #default="{ row }">
                                 <div class="template-cell">
                                     <el-tag type="info" effect="light" class="template-tag">

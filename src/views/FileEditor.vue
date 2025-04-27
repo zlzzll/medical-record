@@ -135,7 +135,7 @@ export default defineComponent({
     const saveMessages = () => {
       localStorage.setItem('aiChatHistory', JSON.stringify(messages));
     };
-    
+
     // 页面加载时清空聊天记录
     onMounted(() => {
       // 清空 messages 数组
@@ -253,8 +253,8 @@ export default defineComponent({
       }
     };
 
-// 滚动到底部的函数
-const scrollToBottom = () => {
+    // 滚动到底部的函数
+    const scrollToBottom = () => {
       const contentContainer = document.querySelector('.content-container');
       if (contentContainer) {
         contentContainer.scrollTop = contentContainer.scrollHeight;
@@ -582,6 +582,7 @@ const scrollToBottom = () => {
   }
 });
 </script>
+
 
 
 

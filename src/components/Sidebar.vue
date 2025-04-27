@@ -41,7 +41,7 @@ const navigateTo = (path: string) => {
         <el-icon>
           <Document />
         </el-icon>
-        <span class="menu-text">病历管理</span>
+        <span class="menu-text">病历资料</span>
       </div>
 
       <div class="menu-item" @click="navigateTo('/createfile')" :class="{ active: route.path === '/createfile' }">

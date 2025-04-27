@@ -191,12 +191,12 @@ export default {
   setup() {
     // 用户数据
     const users = reactive([
-      { id: 1, userName: '张琳', userEmail: '245456537@qq.com', status: '正常', registerTime: new Date(2025, 3, 1, 10, 8) },
-      { id: 2, userName: '陈兵', userEmail: '325437u647@qq.com', status: '正常', registerTime: new Date(2025, 3, 15, 14, 35) },
-      { id: 3, userName: '王涵', userEmail: '325463764@qq.com', status: '正常', registerTime: new Date(2025, 3, 10, 9, 12) },
-      { id: 4, userName: '周博', userEmail: '56849837645@qq.com', status: '正常', registerTime: new Date(2025, 3, 20, 16, 41) },
-      { id: 5, userName: '张丁野', userEmail: '365468798@qq.com', status: '正常', registerTime: new Date(2025, 4, 5, 11, 21) },
-      { id: 6, userName: '向阳', userEmail: '79095687456@qq.com', status: '正常', registerTime: new Date(2025, 4, 15, 13, 3) }
+      { id: 1, userName: '张琳', userEmail: '24545637@qq.com', status: '正常', registerTime: new Date(2025, 3, 1, 10, 8) },
+      { id: 2, userName: '陈兵', userEmail: '325436647@qq.com', status: '正常', registerTime: new Date(2025, 3, 15, 14, 35) },
+      { id: 3, userName: '王涵', userEmail: '32543764@qq.com', status: '正常', registerTime: new Date(2025, 3, 10, 9, 12) },
+      { id: 4, userName: '周博', userEmail: '56848645@qq.com', status: '正常', registerTime: new Date(2025, 3, 20, 16, 41) },
+      { id: 5, userName: '张丁野', userEmail: '36546798@qq.com', status: '正常', registerTime: new Date(2025, 4, 5, 11, 21) },
+      { id: 6, userName: '向阳', userEmail: '790956456@qq.com', status: '正常', registerTime: new Date(2025, 4, 15, 13, 3) }
     ])
 
     // 搜索结果
